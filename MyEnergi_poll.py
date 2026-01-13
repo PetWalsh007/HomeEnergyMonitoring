@@ -90,12 +90,21 @@ def run_test(base_url: str, hub_serial: str, api_key: str,
 
         print(format_row(ts, m))
 
+        #write each sample to totals file 
+        with open("output/test_totals.txt", "a", encoding="utf-8") as f:
+            f.write(f"{ts}, {m['grid_import_w']}, {m['grid_export_w']}, {m['solar_w']}, {m['divert_w']}, {m['house_w']}\n")
+
+
+
         # integrate energy
         totals["grid_import_kwh"] += w_to_kwh(m["grid_import_w"], dt)
         totals["grid_export_kwh"] += w_to_kwh(m["grid_export_w"], dt)
         totals["solar_kwh"] += w_to_kwh(m["solar_w"], dt)
         totals["divert_kwh"] += w_to_kwh(m["divert_w"], dt)
         totals["house_kwh"] += w_to_kwh(m["house_w"], dt)
+
+
+
 
         if time.time() >= t_end:
             break
@@ -109,6 +118,8 @@ def run_test(base_url: str, hub_serial: str, api_key: str,
     print(f"  Solar gen   : {totals['solar_kwh']:.4f} kWh")
     print(f"  Eddi divert : {totals['divert_kwh']:.4f} kWh")
     print(f"  House load  : {totals['house_kwh']:.4f} kWh")
+    print(f"Percentage of solar used in house load: {((totals['solar_kwh'] - totals['divert_kwh']) / totals['solar_kwh'] * 100) if totals['solar_kwh'] > 0 else 0:.2f}%")
+    print(f"Percentage of solar exported to grid: {(totals['grid_export_kwh'] / totals['solar_kwh'] * 100) if totals['solar_kwh'] > 0 else 0:.2f}%")
 
 
 def main():
@@ -117,7 +128,7 @@ def main():
     key = tokens["API_KEY"]
     base = tokens.get("BASE_URL", DEFAULT_BASE_URL)
 
-    run_test(base, hub, key, poll_seconds=60, duration_seconds=180)
+    run_test(base, hub, key, poll_seconds=10, duration_seconds=3000)
 
 
 if __name__ == "__main__":
